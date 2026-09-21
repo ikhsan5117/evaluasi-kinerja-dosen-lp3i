@@ -27,12 +27,15 @@ class MahasiswaDashboardController extends Controller
             ->withCount('pertanyaan')
             ->first();
 
-        // Normalisasi kelas mahasiswa: "AIS 24-001" → "AIS-24-001" agar cocok dengan kelas_mata_kuliah.nama_kelas
-        $namaKelasFilter = str_replace(' ', '-', trim($mahasiswa->kelas));
+        // Normalisasi kelas mahasiswa agar cocok baik format "AIS 24-001" maupun "AIS-24-001"
+        $rawKelas = trim($mahasiswa->kelas ?? '');
+        $kelasWithHyphen = str_replace(' ', '-', $rawKelas);
+        $kelasWithSpace = str_replace('-', ' ', $rawKelas);
+        $possibleClasses = array_values(array_unique(array_filter([$rawKelas, $kelasWithHyphen, $kelasWithSpace])));
 
         // Filter: hanya tampilkan mata kuliah & dosen untuk kelas milik mahasiswa ini
         $kelasList = KelasMataKuliah::where('periode_id', $periodeAktif->id ?? 0)
-            ->where('nama_kelas', $namaKelasFilter)
+            ->whereIn('nama_kelas', $possibleClasses)
             ->with(['mataKuliah', 'dosen.user'])
             ->get();
 

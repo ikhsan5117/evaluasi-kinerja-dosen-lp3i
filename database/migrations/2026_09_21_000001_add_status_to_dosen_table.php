@@ -19,6 +19,12 @@ return new class extends Migration
                 $table->string('status', 20)->default('Aktif')->after('program_studi_id');
             }
         });
+
+        Schema::table('mahasiswa', function (Blueprint $table) {
+            if (!Schema::hasColumn('mahasiswa', 'status')) {
+                $table->string('status', 20)->default('Aktif')->after('kelas');
+            }
+        });
     }
 
     public function down(): void
@@ -31,6 +37,12 @@ return new class extends Migration
 
         Schema::table('mata_kuliah', function (Blueprint $table) {
             if (Schema::hasColumn('mata_kuliah', 'status')) {
+                $table->dropColumn('status');
+            }
+        });
+
+        Schema::table('mahasiswa', function (Blueprint $table) {
+            if (Schema::hasColumn('mahasiswa', 'status')) {
                 $table->dropColumn('status');
             }
         });

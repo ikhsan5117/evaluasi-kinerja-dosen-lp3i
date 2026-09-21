@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('program_studi_id')->constrained('program_studi')->onDelete('cascade');
             $table->string('angkatan', 10);
             $table->string('kelas', 20)->default('Reguler');
-            $table->enum('status', ['Aktif', 'Cuti', 'Lulus'])->default('Aktif');
+            $table->string('status', 20)->default('Aktif');
             $table->timestamps();
         });
     }

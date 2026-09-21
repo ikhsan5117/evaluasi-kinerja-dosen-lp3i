@@ -107,6 +107,14 @@ class AuthController extends Controller
         // Verify password on matching candidates
         foreach ($candidates as $cand) {
             if (Hash::check($password, $cand->password)) {
+                // Check if account status is Nonaktif
+                if ($cand->role === 'mahasiswa' && $cand->mahasiswa && in_array(strtolower($cand->mahasiswa->status ?? 'Aktif'), ['nonaktif', 'tidak aktif', 'keluar', 'do'])) {
+                    return back()->withErrors(['error' => 'Akun mahasiswa Anda berstatus Nonaktif. Silakan hubungi bagian Administrasi Akademik.'])->withInput($request->except('password'));
+                }
+                if ($cand->role === 'dosen' && $cand->dosen && in_array(strtolower($cand->dosen->status ?? 'Aktif'), ['nonaktif', 'tidak aktif'])) {
+                    return back()->withErrors(['error' => 'Akun dosen Anda berstatus Nonaktif. Silakan hubungi bagian Administrasi Akademik.'])->withInput($request->except('password'));
+                }
+
                 Auth::login($cand, $request->boolean('remember'));
                 $request->session()->regenerate();
                 return $this->redirectByRole($cand->role)->with('success', 'Selamat datang kembali, ' . $cand->name . '!');
@@ -115,8 +123,17 @@ class AuthController extends Controller
 
         // Standard Auth::attempt fallback
         if (Auth::attempt(['email' => $identifier, 'password' => $password], $request->boolean('remember'))) {
-            $request->session()->regenerate();
             $authUser = Auth::user();
+            if ($authUser->role === 'mahasiswa' && $authUser->mahasiswa && in_array(strtolower($authUser->mahasiswa->status ?? 'Aktif'), ['nonaktif', 'tidak aktif', 'keluar', 'do'])) {
+                Auth::logout();
+                return back()->withErrors(['error' => 'Akun mahasiswa Anda berstatus Nonaktif. Silakan hubungi bagian Administrasi Akademik.'])->withInput($request->except('password'));
+            }
+            if ($authUser->role === 'dosen' && $authUser->dosen && in_array(strtolower($authUser->dosen->status ?? 'Aktif'), ['nonaktif', 'tidak aktif'])) {
+                Auth::logout();
+                return back()->withErrors(['error' => 'Akun dosen Anda berstatus Nonaktif. Silakan hubungi bagian Administrasi Akademik.'])->withInput($request->except('password'));
+            }
+
+            $request->session()->regenerate();
             return $this->redirectByRole($authUser->role)->with('success', 'Selamat datang kembali, ' . $authUser->name . '!');
         }
 
@@ -188,6 +205,9 @@ class AuthController extends Controller
         $q = trim((string) $request->input('q', ''));
 
         $query = \App\Models\Mahasiswa::with('user:id,name,email')
+            ->where(function ($sub) {
+                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
+            })
             ->when($kelas, function ($query, $kelas) {
                 $query->where('kelas', $kelas);
             })
@@ -217,6 +237,9 @@ class AuthController extends Controller
         $q = trim((string) $request->input('q', ''));
 
         $query = \App\Models\Dosen::with('user:id,name,email')
+            ->where(function ($sub) {
+                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif']);
+            })
             ->when($q, function ($query, $q) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('nidn', 'like', "%{$q}%")
@@ -245,10 +268,13 @@ class AuthController extends Controller
         $kelas = trim((string) $request->input('kelas', ''));
         $q = trim((string) $request->input('q', ''));
 
-        // If specific class is selected, show students for that class
+        // If specific class is selected, show active students for that class
         if (!empty($kelas)) {
             $mhs = \App\Models\Mahasiswa::with('user:id,name,email')
                 ->where('kelas', $kelas)
+                ->where(function ($sub) {
+                    $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
+                })
                 ->when($q, function ($query, $q) {
                     $query->where(function ($sub) use ($q) {
                         $sub->where('nim', 'like', "%{$q}%")
@@ -282,8 +308,11 @@ class AuthController extends Controller
             return response()->json([]);
         }
 
-        // Search Mahasiswa
+        // Search Active Mahasiswa
         $mhs = \App\Models\Mahasiswa::with('user:id,name,email')
+            ->where(function ($sub) {
+                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
+            })
             ->where(function ($sub) use ($q) {
                 $sub->where('nim', 'like', "%{$q}%")
                     ->orWhereHas('user', function ($uq) use ($q) {
@@ -303,8 +332,11 @@ class AuthController extends Controller
                 ];
             });
 
-        // Search Dosen
+        // Search Active Dosen
         $dsn = \App\Models\Dosen::with('user:id,name,email')
+            ->where(function ($sub) {
+                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif']);
+            })
             ->where(function ($sub) use ($q) {
                 $sub->where('nidn', 'like', "%{$q}%")
                     ->orWhereHas('user', function ($uq) use ($q) {

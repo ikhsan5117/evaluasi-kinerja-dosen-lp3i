@@ -31,14 +31,18 @@ class MahasiswaKuesionerController extends Controller
             return view('mahasiswa.kuesioner.empty');
         }
 
-        // Normalisasi kelas: "AIS 24-001" → "AIS-24-001" agar match dengan kelas_mata_kuliah.nama_kelas
-        $namaKelasFilter = str_replace(' ', '-', trim($mahasiswa->kelas));
+        // Normalisasi kelas agar cocok baik format "AIS 24-001" maupun "AIS-24-001"
+        $rawKelas = trim($mahasiswa->kelas ?? '');
+        $kelasWithHyphen = str_replace(' ', '-', $rawKelas);
+        $kelasWithSpace = str_replace('-', ' ', $rawKelas);
+        $possibleClasses = array_values(array_unique(array_filter([$rawKelas, $kelasWithHyphen, $kelasWithSpace])));
 
         // Hanya mata kuliah & dosen pada kelas milik mahasiswa ini
         $kelasList = KelasMataKuliah::where('periode_id', $periodeAktif->id ?? 0)
-            ->where('nama_kelas', $namaKelasFilter)
+            ->whereIn('nama_kelas', $possibleClasses)
             ->with(['mataKuliah', 'dosen.user'])
             ->get();
+        $namaKelasFilter = $rawKelas;
 
         $evaluasiSudah = Evaluasi::where('mahasiswa_id', $mahasiswa->id)
             ->where('kuesioner_id', $kuesionerAktif->id)
