@@ -19,29 +19,51 @@ class MahasiswaSeeder extends Seeder
      */
     public function run(): void
     {
-        $excelPath = 'D:\\application project lp3i\\application project lp3i\\Daftar Peserta Didik 2026.xlsx';
+        $jsonPath = __DIR__ . '/data_mahasiswa.json';
+        $prodis = ProgramStudi::pluck('id', 'kode_prodi')->toArray();
 
-        if (!file_exists($excelPath)) {
-            $this->command->error("❌ File Excel tidak ditemukan: {$excelPath}");
+        // 1. Prioritaskan data JSON jika tersedia (agar bisa jalan di Codespaces/Server Linux)
+        if (file_exists($jsonPath)) {
+            $mahasiswaList = json_decode(file_get_contents($jsonPath), true) ?? [];
+            $total = 0;
+
+            foreach ($mahasiswaList as $m) {
+                $user = User::firstOrCreate(
+                    ['email' => $m['email']],
+                    [
+                        'name'     => $m['name'],
+                        'role'     => 'mahasiswa',
+                        'phone'    => $m['phone'] ?? null,
+                        'password' => Hash::make('password123'),
+                    ]
+                );
+
+                $prodiId = $prodis[$m['kode_prodi']] ?? ($prodis['OAA'] ?? 1);
+
+                Mahasiswa::firstOrCreate(
+                    ['nim' => $m['nim']],
+                    [
+                        'user_id'          => $user->id,
+                        'program_studi_id' => $prodiId,
+                        'angkatan'         => $m['angkatan'],
+                        'kelas'            => $m['kelas'],
+                        'status'           => $m['status'] ?? 'Aktif',
+                    ]
+                );
+                $total++;
+            }
+
+            $this->command->info("✅ Mahasiswa seeded: {$total} mahasiswa berhasil dari JSON.");
             return;
         }
 
-        $prodis = ProgramStudi::pluck('id', 'kode_prodi')->toArray();
+        // 2. Fallback: Parse file Excel jika JSON tidak ada
+        $excelPath = 'D:\\application project lp3i\\application project lp3i\\Daftar Peserta Didik 2026.xlsx';
 
-        $total   = 0;
-        $skipped = 0;
-
-        // Konfigurasi per sheet
-        $sheets = [
-            '2023' => ['angkatan' => '2023', 'nipd_col' => 1, 'nama_col' => 2, 'kelas_col' => 3, 'prodi_col' => null],
-            '2024' => ['angkatan' => '2024', 'nipd_col' => 1, 'nama_col' => 2, 'kelas_col' => 3, 'prodi_col' => null],
-            '2025' => ['angkatan' => '2025', 'nipd_col' => 1, 'nama_col' => 2, 'kelas_col' => 4, 'prodi_col' => 3],
-        ];
-
-        // Buka Excel menggunakan PhpSpreadsheet (tersedia via maatwebsite/excel)
-        $reader   = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($excelPath);
-        $reader->setReadDataOnly(true);
-        $spreadsheet = $reader->load($excelPath);
+        if (!file_exists($excelPath)) {
+            $this->command->warn("⚠️  Data mahasiswa JSON atau Excel tidak ditemukan.");
+            return;
+        }
 
         foreach ($sheets as $sheetName => $config) {
             $worksheet = $spreadsheet->getSheetByName($sheetName);
