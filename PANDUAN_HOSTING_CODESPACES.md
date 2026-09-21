@@ -1,76 +1,105 @@
-# 🚀 Panduan Menjalankan & Mengakses Aplikasi Evaluasi Dosen LP3I di GitHub Codespaces
+# 🌐 Panduan Lengkap: Hosting & Menjalankan Projek Web di GitHub Codespaces (100% Gratis & Tanpa Kartu Kredit)
 
-Panduan ini dibuat agar siapa saja (teman, dosen, mahasiswa) dapat menjalankan atau mengakses aplikasi web **Evaluasi Kinerja Dosen LP3I** secara online tanpa perlu install PHP / Composer / database di laptop lokal.
+Panduan ini bersifat **universal (umum)** untuk siapa saja yang ingin membuat projek webnya (Laravel, PHP, NodeJS, React, dll) bisa diakses secara online di internet dari HP/laptop orang lain tanpa perlu install aplikasi apapun di laptop lokal dan tanpa kartu kredit.
 
 ---
 
-## 📌 1. Cara Menjalankan Server di Cloud (Untuk Pemilik / Pengelola Repo)
+## 💡 Apa itu GitHub Codespaces?
+GitHub Codespaces adalah komputer/server virtual di awan (*cloud*) yang disediakan resmi oleh GitHub/Microsoft. 
+- ✅ **100% Gratis** (Dapat jatah 60 jam penggunaan gratis setiap bulan per akun GitHub).
+- ✅ **Tidak butuh kartu kredit / debit sama sekali**.
+- ✅ Diberikan domain HTTPS publik resmi (`.app.github.dev`) yang aman dan cepat.
 
-Jika kamu ingin menyalakan server di cloud agar aplikasi bisa diakses online:
+---
 
-1. Buka repository GitHub: 👉 **[https://github.com/ikhsan5117/evaluasi-kinerja-dosen-lp3i](https://github.com/ikhsan5117/evaluasi-kinerja-dosen-lp3i)**
+## 🛠️ Langkah-Langkah Menjalankan Projek:
+
+### Langkah 1: Pastikan Kode Projek Sudah Masuk ke GitHub
+1. Buat repository baru di akun GitHub kamu ([github.com/new](https://github.com/new)).
+2. Upload / push semua file kodingan projek kamu ke repository tersebut.
+
+---
+
+### Langkah 2: Buka Server Cloud (Codespaces)
+1. Buka halaman repository projek kamu di GitHub.
 2. Klik tombol hijau **`<> Code`** di atas daftar file.
-3. Pilih tab **`Codespaces`** → klik **`Create codespace on main`** (atau klik nama Codespace yang sudah ada jika pernah dibuat).
-4. Tunggu beberapa detik hingga tampilan editor VS Code di browser terbuka.
-5. Di bagian bawah (panel **Terminal**), jalankan perintah satu baris berikut lalu tekan **Enter**:
+3. Pilih tab **`Codespaces`** → lalu klik tombol **`Create codespace on main`**.
+4. Tunggu sekitar 10–30 detik hingga tampilan editor VS Code di browser kamu selesai dimuat.
 
+---
+
+### Langkah 3: Menjalankan Server di Terminal
+
+Buka panel **Terminal** di bagian bawah Codespaces:
+
+#### A. Jika Projek Kamu Menggunakan **Laravel (PHP)**:
+Ketik perintah ini di terminal lalu tekan **Enter**:
 ```bash
-cp .env.example .env && cp database/starter.sqlite database/database.sqlite && composer install --ignore-platform-reqs && php artisan key:generate && php artisan optimize:clear && php artisan serve --port=8000 --host=0.0.0.0
+# 1. Siapkan file environment & database (jika pakai SQLite)
+cp .env.example .env
+touch database/database.sqlite
+
+# 2. Install paket dependensi
+composer install --ignore-platform-reqs
+
+# 3. Generate App Key & Migrasi Database
+php artisan key:generate
+php artisan migrate --seed
+
+# 4. Nyalakan Server Web
+php artisan serve --port=8000 --host=0.0.0.0
 ```
 
-6. **Buat Akses Publik (Penting agar bisa dibuka teman tanpa login GitHub)**:
-   - Klik tab **`Pelabuhan`** / **`Ports`** (di samping tab *Terminal*).
-   - Pada baris **Port 8000**, cari kolom **Visibilitas** (*Visibility*).
-   - Klik kanan pada tulisan **`Private`** → ubah menjadi **`Public`** (Publik).
-7. Salin link di kolom **Alamat yang Diteruskan** *(Forwarded Address)* contoh: `https://[nama-server]-8000.app.github.dev`.
-8. Bagikan link tersebut ke teman atau dosen kamu!
+#### B. Jika Projek Kamu Menggunakan **NodeJS / Express / React / Vue**:
+```bash
+npm install
+npm run dev -- --host 0.0.0.0
+```
+
+#### C. Jika Projek Kamu Menggunakan **HTML / PHP Native Biasa**:
+```bash
+php -S 0.0.0.0:8000
+```
 
 ---
 
-## ⏱️ Apakah Server Harus Dinyalakan Terus?
+### Langkah 4: Buat Link Jadi "PUBLIC" (Paling Penting! 🚨)
+Secara default, link web di Codespaces terkunci (*Private*). Agar teman, dosen, atau penguji bisa langsung membuka web kamu **tanpa harus login akun GitHub**:
 
-- **Apakah harus buka laptop terus?** 
-  Server ini berjalan di komputer cloud milik Microsoft/GitHub, bukan di RAM laptop kamu.
-- **Sistem Auto-Sleep:** 
-  GitHub Codespaces memiliki fitur hemat kuota. Jika tab Codespaces kamu ditutup / tidak ada aktivitas selama ~30 menit, server akan otomatis *tidur* (*sleep*).
-- **Cara menyalakannya lagi kapan saja:** 
-  Cukup buka **[github.com/codespaces](https://github.com/codespaces)**, klik nama Codespace kamu, lalu di terminal jalankan lagi perintah:
-  ```bash
-  php artisan serve --port=8000 --host=0.0.0.0
-  ```
-- **Kuota Gratis:** 
-  Setiap akun GitHub gratis mendapatkan **60 jam penggunaan Codespaces gratis setiap bulannya**.
+1. Di panel tab bawah (di sebelah tab *Terminal*), klik tab **`Ports`** (atau **`Pelabuhan`**).
+2. Cari baris port yang sedang berjalan (contoh: port **`8000`** atau **`3000`** / **`5173`**).
+3. Pada kolom **Visibility** (*Visibilitas*):
+   - **Klik kanan** pada tulisan **`Private`** → ubah menjadi **`Public`** (Publik).
+4. Pada kolom **Forwarded Address** (*Alamat Diteruskan*):
+   - Klik ikon **salin / copy 📋** atau klik ikon **bola dunia 🌐**.
+   - Contoh link: `https://[nama-server]-8000.app.github.dev`
+5. Bagikan link tersebut ke siapa saja! Sekarang web kamu sudah live dan bisa dibuka dari HP / koneksi internet mana pun! 🎉
 
 ---
 
-## 🔑 2. Akun Uji Coba untuk Login
+## ⏱️ Manajemen Server & Kuota Hemat
 
-Gunakan kredensial berikut untuk menguji 3 peran (Role) yang ada:
+### 1. Kapan Server Berhenti? (Auto-Sleep)
+- Jika tab browser Codespaces ditutup atau tidak ada aktivitas selama **~30 menit**, GitHub akan otomatis mengistirahatkan server (*sleep*) untuk menghemat kuota jam gratis kamu.
+- Semua data dan kodingan kamu **tetap aman 100%** (tidak hilang).
 
-### 👑 1. Administrator
-- **URL**: `[Link-Web]/login`
-- **Email**: `admin@lp3i.ac.id`
-- **Password**: `password123` *(atau `admin123#`)*
-- **Fitur**: Kelola Master Data (Dosen, Mahasiswa, Matkul, Kelas, Periode), Kelola Kuesioner & Pertanyaan, Export Laporan Excel & Cetak Rekap PDF.
+### 2. Cara Menyalakan Server Kembali Kapan Saja
+Saat ingin presentasi atau demo lagi:
+1. Buka **[github.com/codespaces](https://github.com/codespaces)**.
+2. Klik nama Codespace kamu.
+3. Di terminal, cukup jalankan kembali perintah start:
+   ```bash
+   php artisan serve --port=8000 --host=0.0.0.0
+   ```
 
----
-
-### 👨‍🏫 2. Dosen
-- **Email**: `halim.fathi@lp3i.ac.id` *(atau pilih email dosen lain yang terdaftar)*
-- **Password**: `password123`
-- **Fitur**: Dashboard grafik skor 4 kompetensi (Pedagogik, Profesional, Kepribadian, Sosial), rekap nilai per kelas, dan membaca masukan anonim dari mahasiswa.
-
----
-
-### 🎓 3. Mahasiswa
-- **Email**: `2403001@lp3i.ac.id` *(atau gunakan NIPD mahasiswa lain)*
-- **Password**: `password123`
-- **Fitur**: Mengisi kuesioner evaluasi dosen per mata kuliah yang diampu di semester aktif, riwayat pengisian evaluasi.
+### 3. Cara Mematikan Server Manual (Langsung Hemat Kuota)
+Setelah selesai presentasi:
+1. Buka **[github.com/codespaces](https://github.com/codespaces)**.
+2. Klik ikon **`...` (titik tiga)** di samping nama Codespace kamu → pilih **`Stop Codespace`**.
 
 ---
 
-## 🎨 Fitur Utama Aplikasi
-1. **Mode Terang & Gelap (Light / Dark Mode)** dengan transisi mulus dan penyimpanan preferensi otomatis.
-2. **Tabel Responsif** dengan scroll horizontal halus untuk tampilan mobile & tablet tanpa teks berhimpitan.
-3. **Rekapitulasi Otomatis** nilai rata-rata dan predikat kinerja dosen (Sangat Baik, Baik, Cukup, Kurang).
-4. **Export Data & Cetak Laporan** format Excel & PDF resmi.
+## 📊 Cara Cek Sisa Kuota Gratis
+1. Buka: **[github.com/settings/billing/summary](https://github.com/settings/billing/summary)**
+2. Pilih menu **Usage** di sebelah kiri untuk melihat berapa jam yang sudah terpakai dari 60 jam gratis bulanan kamu.
+3. Kuota 60 jam akan otomatis di-reset penuh kembali setiap awal bulan.
