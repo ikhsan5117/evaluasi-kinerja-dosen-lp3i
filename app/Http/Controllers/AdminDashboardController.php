@@ -15,8 +15,8 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
-        $totalDosen = Dosen::count();
-        $totalMahasiswa = Mahasiswa::count();
+        $totalDosen = Dosen::where('status', 'Aktif')->orWhereNull('status')->count();
+        $totalMahasiswa = Mahasiswa::where('status', 'Aktif')->orWhereNull('status')->count();
         $totalKuesioner = Kuesioner::count();
         $periodeAktif = Periode::where('status', 'Aktif')->first() ?? Periode::latest()->first();
 

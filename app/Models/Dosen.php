@@ -19,6 +19,7 @@ class Dosen extends Model
         'gelar',
         'program_studi_id',
         'jabatan_fungsional',
+        'status',
     ];
 
     public function user(): BelongsTo

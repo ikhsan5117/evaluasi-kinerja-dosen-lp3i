@@ -13,18 +13,16 @@ use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MasterDataImportController;
 use Illuminate\Support\Facades\Route;
 
-// Guest Routes
-Route::middleware('guest')->group(function () {
-    Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-    Route::get('/login', [AuthController::class, 'showLogin']);
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+// Public / Authentication Routes
+Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+Route::get('/login', [AuthController::class, 'showLogin']);
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-    // Autocomplete API endpoints for dynamic login
-    Route::get('/auth/autocomplete/kelas', [AuthController::class, 'autocompleteKelas'])->name('auth.autocomplete.kelas');
-    Route::get('/auth/autocomplete/mahasiswa', [AuthController::class, 'autocompleteMahasiswa'])->name('auth.autocomplete.mahasiswa');
-    Route::get('/auth/autocomplete/dosen', [AuthController::class, 'autocompleteDosen'])->name('auth.autocomplete.dosen');
-    Route::get('/auth/autocomplete/user', [AuthController::class, 'autocompleteUser'])->name('auth.autocomplete.user');
-});
+// Autocomplete API endpoints for dynamic login
+Route::get('/auth/autocomplete/kelas', [AuthController::class, 'autocompleteKelas'])->name('auth.autocomplete.kelas');
+Route::get('/auth/autocomplete/mahasiswa', [AuthController::class, 'autocompleteMahasiswa'])->name('auth.autocomplete.mahasiswa');
+Route::get('/auth/autocomplete/dosen', [AuthController::class, 'autocompleteDosen'])->name('auth.autocomplete.dosen');
+Route::get('/auth/autocomplete/user', [AuthController::class, 'autocompleteUser'])->name('auth.autocomplete.user');
 
 // Authenticated Routes (All Roles)
 Route::middleware('auth')->group(function () {

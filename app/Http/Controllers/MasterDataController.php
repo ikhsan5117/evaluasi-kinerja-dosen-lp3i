@@ -20,22 +20,25 @@ class MasterDataController extends Controller
         $allowedTabs = ['dosen', 'mahasiswa', 'periode', 'matkul', 'kelas'];
         $tab = in_array($request->get('tab'), $allowedTabs) ? $request->get('tab') : 'dosen';
 
-        // === DOSEN: search by nama, nidn, email, prodi ===
+        // === DOSEN: search by nama, nidn, email, prodi, status ===
         $dosenQ = $request->get('q_dosen');
         $dosenProdi = $request->get('f_dosen_prodi');
+        $dosenStatus = $request->get('f_dosen_status');
         $dosenQuery = Dosen::with(['user', 'programStudi'])
             ->when($dosenQ, fn($q) => $q->whereHas('user', fn($u) =>
                 $u->where('name', 'like', "%{$dosenQ}%")
                   ->orWhere('email', 'like', "%{$dosenQ}%")
             )->orWhere('nidn', 'like', "%{$dosenQ}%"))
             ->when($dosenProdi, fn($q) => $q->where('program_studi_id', $dosenProdi))
+            ->when($dosenStatus, fn($q) => $q->where('status', $dosenStatus))
             ->latest();
         $dosens = $dosenQuery->paginate(10, ['*'], 'dosen_page')->appends($request->except('dosen_page'));
 
-        // === MAHASISWA: search by nama, nim, kelas, angkatan, prodi ===
+        // === MAHASISWA: search by nama, nim, kelas, angkatan, prodi, status ===
         $mhsQ = $request->get('q_mhs');
         $mhsProdi = $request->get('f_mhs_prodi');
         $mhsAngkatan = $request->get('f_mhs_angkatan');
+        $mhsStatus = $request->get('f_mhs_status');
         $mhsQuery = Mahasiswa::with(['user', 'programStudi'])
             ->when($mhsQ, fn($q) => $q->whereHas('user', fn($u) =>
                 $u->where('name', 'like', "%{$mhsQ}%")
@@ -43,6 +46,7 @@ class MasterDataController extends Controller
               ->orWhere('kelas', 'like', "%{$mhsQ}%"))
             ->when($mhsProdi, fn($q) => $q->where('program_studi_id', $mhsProdi))
             ->when($mhsAngkatan, fn($q) => $q->where('angkatan', $mhsAngkatan))
+            ->when($mhsStatus, fn($q) => $q->where('status', $mhsStatus))
             ->latest();
         $mahasiswas = $mhsQuery->paginate(15, ['*'], 'mhs_page')->appends($request->except('mhs_page'));
 
@@ -52,13 +56,15 @@ class MasterDataController extends Controller
         // === PRODI ===
         $prodis = ProgramStudi::withCount(['dosen', 'mahasiswa', 'mataKuliah'])->get();
 
-        // === MATKUL: search by nama, kode, prodi ===
+        // === MATKUL: search by nama, kode, prodi, status ===
         $matkulQ = $request->get('q_matkul');
         $matkulProdi = $request->get('f_matkul_prodi');
+        $matkulStatus = $request->get('f_matkul_status');
         $matkulQuery = MataKuliah::with('programStudi')
             ->when($matkulQ, fn($q) => $q->where('nama_matkul', 'like', "%{$matkulQ}%")
                 ->orWhere('kode_matkul', 'like', "%{$matkulQ}%"))
             ->when($matkulProdi, fn($q) => $q->where('program_studi_id', $matkulProdi))
+            ->when($matkulStatus, fn($q) => $q->where('status', $matkulStatus))
             ->latest();
         $matkuls = $matkulQuery->paginate(10, ['*'], 'matkul_page')->appends($request->except('matkul_page'));
 
@@ -97,6 +103,7 @@ class MasterDataController extends Controller
             'program_studi_id' => 'required|exists:program_studi,id',
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
+            'status' => 'nullable|in:Aktif,Nonaktif',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -113,6 +120,7 @@ class MasterDataController extends Controller
                 'nidn' => $validated['nidn'],
                 'gelar' => $validated['gelar'] ?? null,
                 'program_studi_id' => $validated['program_studi_id'],
+                'status' => $validated['status'] ?? 'Aktif',
             ]);
         });
 
@@ -129,6 +137,7 @@ class MasterDataController extends Controller
             'program_studi_id' => 'required|exists:program_studi,id',
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
+            'status' => 'required|in:Aktif,Nonaktif',
         ]);
 
         DB::transaction(function () use ($dosen, $validated) {
@@ -144,6 +153,7 @@ class MasterDataController extends Controller
                 'nidn' => $validated['nidn'],
                 'gelar' => $validated['gelar'] ?? null,
                 'program_studi_id' => $validated['program_studi_id'],
+                'status' => $validated['status'],
             ]);
         });
 
@@ -168,6 +178,7 @@ class MasterDataController extends Controller
             'kelas' => 'required|string|max:20',
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
+            'status' => 'nullable|in:Aktif,Nonaktif,Cuti,Lulus',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -185,6 +196,7 @@ class MasterDataController extends Controller
                 'program_studi_id' => $validated['program_studi_id'],
                 'angkatan' => $validated['angkatan'],
                 'kelas' => $validated['kelas'],
+                'status' => $validated['status'] ?? 'Aktif',
             ]);
         });
 
@@ -202,6 +214,7 @@ class MasterDataController extends Controller
             'kelas' => 'required|string|max:20',
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
+            'status' => 'required|in:Aktif,Nonaktif,Cuti,Lulus',
         ]);
 
         DB::transaction(function () use ($mahasiswa, $validated) {
@@ -218,6 +231,7 @@ class MasterDataController extends Controller
                 'program_studi_id' => $validated['program_studi_id'],
                 'angkatan' => $validated['angkatan'],
                 'kelas' => $validated['kelas'],
+                'status' => $validated['status'],
             ]);
         });
 
@@ -279,6 +293,7 @@ class MasterDataController extends Controller
             'nama_matkul' => 'required|string|max:255',
             'sks' => 'required|integer|min:1|max:6',
             'program_studi_id' => 'required|exists:program_studi,id',
+            'status' => 'nullable|in:Aktif,Nonaktif',
         ]);
 
         MataKuliah::create($validated);
@@ -293,6 +308,7 @@ class MasterDataController extends Controller
             'nama_matkul' => 'required|string|max:255',
             'sks' => 'required|integer|min:1|max:6',
             'program_studi_id' => 'required|exists:program_studi,id',
+            'status' => 'required|in:Aktif,Nonaktif',
         ]);
 
         $matkul->update($validated);

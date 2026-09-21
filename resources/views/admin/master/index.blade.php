@@ -56,8 +56,13 @@
                     <option value="{{ $pr->id }}" {{ request('f_dosen_prodi') == $pr->id ? 'selected' : '' }}>{{ $pr->kode_prodi }}</option>
                 @endforeach
             </select>
+            <select name="f_dosen_status" class="filter-select">
+                <option value="">-- Semua Status --</option>
+                <option value="Aktif" {{ request('f_dosen_status') === 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                <option value="Nonaktif" {{ request('f_dosen_status') === 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+            </select>
             <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-            @if(request('q_dosen') || request('f_dosen_prodi'))
+            @if(request('q_dosen') || request('f_dosen_prodi') || request('f_dosen_status'))
                 <a href="{{ route('admin.master.index', ['tab' => 'dosen']) }}" class="btn btn-ghost btn-sm">✕ Reset</a>
             @endif
         </div>
@@ -75,6 +80,7 @@
                         <th>NIDN</th>
                         <th>Program Studi</th>
                         <th>Kontak / Email</th>
+                        <th>Status</th>
                         <th width="100">Aksi</th>
                     </tr>
                 </thead>
@@ -95,6 +101,11 @@
                                 <span style="font-size: 10px; color: var(--muted);">{{ $d->user->phone ?? '-' }}</span>
                             </td>
                             <td>
+                                <span class="badge {{ ($d->status ?? 'Aktif') === 'Aktif' ? 'badge-green' : 'badge-gray' }}">
+                                    {{ $d->status ?? 'Aktif' }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-icon text-primary" title="Edit" onclick="editDosen({{ json_encode([
                                     'id' => $d->id,
                                     'name' => $d->user->name,
@@ -102,7 +113,8 @@
                                     'nidn' => $d->nidn,
                                     'gelar' => $d->gelar,
                                     'prodi_id' => $d->program_studi_id,
-                                    'phone' => $d->user->phone
+                                    'phone' => $d->user->phone,
+                                    'status' => $d->status ?? 'Aktif'
                                 ]) }})">✎</button>
                                 <form action="{{ route('admin.master.dosen.destroy', $d) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus dosen ini beserta akun penggunanya?')">
                                     @csrf
@@ -112,7 +124,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" style="text-align: center; color: var(--muted);">Belum ada data dosen.</td></tr>
+                        <tr><td colspan="7" style="text-align: center; color: var(--muted);">Belum ada data dosen.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -142,8 +154,15 @@
                     <option value="{{ $ang }}" {{ request('f_mhs_angkatan') == $ang ? 'selected' : '' }}>{{ $ang }}</option>
                 @endforeach
             </select>
+            <select name="f_mhs_status" class="filter-select">
+                <option value="">-- Semua Status --</option>
+                <option value="Aktif" {{ request('f_mhs_status') === 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                <option value="Nonaktif" {{ request('f_mhs_status') === 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="Cuti" {{ request('f_mhs_status') === 'Cuti' ? 'selected' : '' }}>Cuti</option>
+                <option value="Lulus" {{ request('f_mhs_status') === 'Lulus' ? 'selected' : '' }}>Lulus</option>
+            </select>
             <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-            @if(request('q_mhs') || request('f_mhs_prodi') || request('f_mhs_angkatan'))
+            @if(request('q_mhs') || request('f_mhs_prodi') || request('f_mhs_angkatan') || request('f_mhs_status'))
                 <a href="{{ route('admin.master.index', ['tab' => 'mahasiswa']) }}" class="btn btn-ghost btn-sm">✕ Reset</a>
             @endif
         </div>
@@ -162,6 +181,7 @@
                         <th>Program Studi</th>
                         <th>Angkatan & Kelas</th>
                         <th>Email / Kontak</th>
+                        <th>Status</th>
                         <th width="100">Aksi</th>
                     </tr>
                 </thead>
@@ -178,6 +198,20 @@
                                 <span style="font-size: 10px; color: var(--muted);">{{ $m->user->phone ?? '-' }}</span>
                             </td>
                             <td>
+                                @php
+                                    $mStatus = $m->status ?? 'Aktif';
+                                    $mBadge = match($mStatus) {
+                                        'Aktif' => 'badge-green',
+                                        'Cuti' => 'badge-amber',
+                                        'Lulus' => 'badge-blue',
+                                        default => 'badge-gray',
+                                    };
+                                @endphp
+                                <span class="badge {{ $mBadge }}">
+                                    {{ $mStatus }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-icon text-primary" title="Edit" onclick="editMahasiswa({{ json_encode([
                                     'id' => $m->id,
                                     'name' => $m->user->name,
@@ -186,7 +220,8 @@
                                     'prodi_id' => $m->program_studi_id,
                                     'angkatan' => $m->angkatan,
                                     'kelas' => $m->kelas,
-                                    'phone' => $m->user->phone
+                                    'phone' => $m->user->phone,
+                                    'status' => $m->status ?? 'Aktif'
                                 ]) }})">✎</button>
                                 <form action="{{ route('admin.master.mahasiswa.destroy', $m) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus mahasiswa ini?')">
                                     @csrf
@@ -196,7 +231,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" style="text-align: center; color: var(--muted);">Belum ada data mahasiswa.</td></tr>
+                        <tr><td colspan="8" style="text-align: center; color: var(--muted);">Belum ada data mahasiswa.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -263,8 +298,13 @@
                     <option value="{{ $pr->id }}" {{ request('f_matkul_prodi') == $pr->id ? 'selected' : '' }}>{{ $pr->kode_prodi }}</option>
                 @endforeach
             </select>
+            <select name="f_matkul_status" class="filter-select">
+                <option value="">-- Semua Status --</option>
+                <option value="Aktif" {{ request('f_matkul_status') === 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                <option value="Nonaktif" {{ request('f_matkul_status') === 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+            </select>
             <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-            @if(request('q_matkul') || request('f_matkul_prodi'))
+            @if(request('q_matkul') || request('f_matkul_prodi') || request('f_matkul_status'))
                 <a href="{{ route('admin.master.index', ['tab' => 'matkul']) }}" class="btn btn-ghost btn-sm">✕ Reset</a>
             @endif
         </div>
@@ -282,6 +322,7 @@
                         <th>Nama Mata Kuliah</th>
                         <th>Bobot SKS</th>
                         <th>Program Studi</th>
+                        <th>Status</th>
                         <th width="100">Aksi</th>
                     </tr>
                 </thead>
@@ -294,6 +335,11 @@
                             <td>{{ $mk->sks }} SKS</td>
                             <td><span class="badge badge-blue">{{ $mk->programStudi->nama_prodi ?? '-' }}</span></td>
                             <td>
+                                <span class="badge {{ ($mk->status ?? 'Aktif') === 'Aktif' ? 'badge-green' : 'badge-gray' }}">
+                                    {{ $mk->status ?? 'Aktif' }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-icon text-primary" title="Edit" onclick="editMatkul({{ json_encode($mk) }})">✎</button>
                                 <form action="{{ route('admin.master.matkul.destroy', $mk) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus mata kuliah ini?')">
                                     @csrf
@@ -303,7 +349,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" style="text-align: center; color: var(--muted);">Belum ada data mata kuliah.</td></tr>
+                        <tr><td colspan="7" style="text-align: center; color: var(--muted);">Belum ada data mata kuliah.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -349,6 +395,7 @@
                         <th>Dosen Pengampu</th>
                         <th>Periode</th>
                         <th>Ruangan & Jadwal</th>
+                        <th>Status</th>
                         <th width="100">Aksi</th>
                     </tr>
                 </thead>
@@ -365,6 +412,11 @@
                                 <span style="font-size: 10px; color: var(--muted);">{{ $k->jadwal ?? '-' }}</span>
                             </td>
                             <td>
+                                <span class="badge {{ ($k->periode && $k->periode->status === 'Aktif') ? 'badge-green' : 'badge-gray' }}">
+                                    {{ ($k->periode && $k->periode->status === 'Aktif') ? 'Aktif' : 'Selesai' }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-icon text-primary" title="Edit" onclick="editKelas({{ json_encode($k) }})">✎</button>
                                 <form action="{{ route('admin.master.kelas.destroy', $k) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus kelas perkuliahan ini?')">
                                     @csrf
@@ -374,7 +426,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" style="text-align: center; color: var(--muted);">Belum ada data kelas perkuliahan.</td></tr>
+                        <tr><td colspan="8" style="text-align: center; color: var(--muted);">Belum ada data kelas perkuliahan.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -425,6 +477,13 @@
                 <div class="form-group">
                     <label class="form-label">No. Telepon / WhatsApp</label>
                     <input type="text" name="phone" class="form-control" placeholder="08xxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Keaktifan</label>
+                    <select name="status" class="form-control" required>
+                        <option value="Aktif" selected>Aktif (Mengajar)</option>
+                        <option value="Nonaktif">Nonaktif (Tidak Mengajar)</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -477,6 +536,13 @@
                 <div class="form-group">
                     <label class="form-label">No. Telepon</label>
                     <input type="text" name="phone" id="editDosenPhone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Keaktifan</label>
+                    <select name="status" id="editDosenStatus" class="form-control" required>
+                        <option value="Aktif">Aktif (Mengajar)</option>
+                        <option value="Nonaktif">Nonaktif (Tidak Mengajar)</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -534,6 +600,15 @@
                     <label class="form-label">No. HP / WA</label>
                     <input type="text" name="phone" class="form-control">
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Status Mahasiswa</label>
+                    <select name="status" class="form-control" required>
+                        <option value="Aktif" selected>Aktif (Kuliah)</option>
+                        <option value="Nonaktif">Nonaktif (Keluar / DO)</option>
+                        <option value="Cuti">Cuti</option>
+                        <option value="Lulus">Lulus</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-ghost" onclick="closeModal('modalAddMahasiswa')">Batal</button>
@@ -589,6 +664,15 @@
                 <div class="form-group">
                     <label class="form-label">No. HP</label>
                     <input type="text" name="phone" id="editMhsPhone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Mahasiswa</label>
+                    <select name="status" id="editMhsStatus" class="form-control" required>
+                        <option value="Aktif">Aktif (Kuliah)</option>
+                        <option value="Nonaktif">Nonaktif (Keluar / DO)</option>
+                        <option value="Cuti">Cuti</option>
+                        <option value="Lulus">Lulus</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -665,6 +749,13 @@
                         @foreach($prodis as $pr)
                             <option value="{{ $pr->id }}">{{ $pr->nama_prodi }}</option>
                         @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Mata Kuliah</label>
+                    <select name="status" class="form-control" required>
+                        <option value="Aktif" selected>Aktif</option>
+                        <option value="Nonaktif">Nonaktif</option>
                     </select>
                 </div>
             </div>
@@ -802,6 +893,13 @@
                         @foreach($prodis as $pr)
                             <option value="{{ $pr->id }}">{{ $pr->nama_prodi }}</option>
                         @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Mata Kuliah</label>
+                    <select name="status" id="editMatkulStatus" class="form-control" required>
+                        <option value="Aktif">Aktif</option>
+                        <option value="Nonaktif">Nonaktif</option>
                     </select>
                 </div>
             </div>
@@ -1073,6 +1171,7 @@
         document.getElementById('editDosenGelar').value = data.gelar || '';
         document.getElementById('editDosenProdi').value = data.prodi_id;
         document.getElementById('editDosenPhone').value = data.phone || '';
+        document.getElementById('editDosenStatus').value = data.status || 'Aktif';
         openModal('modalEditDosen');
     }
 
@@ -1085,6 +1184,7 @@
         document.getElementById('editMhsAngkatan').value = data.angkatan;
         document.getElementById('editMhsKelas').value = data.kelas;
         document.getElementById('editMhsPhone').value = data.phone || '';
+        document.getElementById('editMhsStatus').value = data.status || 'Aktif';
         openModal('modalEditMahasiswa');
     }
 
@@ -1102,6 +1202,7 @@
         document.getElementById('editMatkulNama').value = data.nama_matkul;
         document.getElementById('editMatkulSks').value = data.sks;
         document.getElementById('editMatkulProdi').value = data.program_studi_id;
+        document.getElementById('editMatkulStatus').value = data.status || 'Aktif';
         openModal('modalEditMatkul');
     }
 

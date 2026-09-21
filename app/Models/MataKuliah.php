@@ -18,6 +18,7 @@ class MataKuliah extends Model
         'nama_matkul',
         'sks',
         'program_studi_id',
+        'status',
     ];
 
     public function programStudi(): BelongsTo
