@@ -86,6 +86,7 @@ class DosenSeeder extends Seeder
                     'gelar'             => $data['gelar'],
                     'program_studi_id'  => $prodiId,
                     'jabatan_fungsional'=> 'Tenaga Pengajar',
+                    'status'            => 'Aktif',
                 ]
             );
         }

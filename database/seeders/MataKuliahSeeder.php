@@ -79,6 +79,7 @@ class MataKuliahSeeder extends Seeder
                     'nama_matkul'       => $mk['nama'],
                     'sks'               => $mk['sks'],
                     'program_studi_id'  => $prodiId,
+                    'status'            => 'Aktif',
                 ]
             );
             $counter++;
