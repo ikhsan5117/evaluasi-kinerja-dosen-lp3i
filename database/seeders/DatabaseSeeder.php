@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             DosenSeeder::class,             // 4. Dosen + User dosen (dari gambar jadwal)
             KelasMataKuliahSeeder::class,   // 5. Relasi Kelas - Matkul - Dosen
             MahasiswaSeeder::class,         // 6. Mahasiswa dari Excel (semua angkatan)
+            KuesionerSeeder::class,         // 7. Kuesioner & 15 Butir Pertanyaan Evaluasi
         ]);
 
         $this->command->info('');
