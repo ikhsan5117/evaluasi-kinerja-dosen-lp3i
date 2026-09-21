@@ -20,15 +20,18 @@ class AdminDashboardController extends Controller
         $totalKuesioner = Kuesioner::count();
         $periodeAktif = Periode::where('status', 'Aktif')->first() ?? Periode::latest()->first();
 
-        // Hitung partisipasi evaluasi periode aktif
+        // Hitung partisipasi evaluasi periode aktif berdasarkan jumlah mahasiswa
         $totalKelasAktif = $periodeAktif ? KelasMataKuliah::where('periode_id', $periodeAktif->id)->count() : 0;
         $totalEvaluasiAktif = $periodeAktif ? Evaluasi::whereHas('kelasMataKuliah', function ($q) use ($periodeAktif) {
             $q->where('periode_id', $periodeAktif->id);
         })->count() : 0;
 
-        // Estimasi expected responden (total mhs * total kelas aktif yang relevan)
-        $expectedResponden = max(1, $totalMahasiswa * max(1, $totalKelasAktif));
-        $partisipasiPersen = min(100, round(($totalEvaluasiAktif / max(1, $totalMahasiswa * 4)) * 100));
+        // Mahasiswa unik yang sudah mengisi setidaknya 1 evaluasi di periode ini
+        $mahasiswaMengisi = $periodeAktif ? Evaluasi::whereHas('kelasMataKuliah', function ($q) use ($periodeAktif) {
+            $q->where('periode_id', $periodeAktif->id);
+        })->distinct('mahasiswa_id')->count('mahasiswa_id') : 0;
+
+        $partisipasiPersen = $totalMahasiswa > 0 ? min(100, round(($mahasiswaMengisi / $totalMahasiswa) * 100)) : 0;
 
         // Aktivitas terbaru
         $recentEvaluasi = Evaluasi::with(['mahasiswa.user', 'kelasMataKuliah.dosen.user', 'kelasMataKuliah.mataKuliah'])
@@ -42,6 +45,7 @@ class AdminDashboardController extends Controller
             'totalKuesioner',
             'periodeAktif',
             'partisipasiPersen',
+            'mahasiswaMengisi',
             'totalEvaluasiAktif',
             'recentEvaluasi'
         ));

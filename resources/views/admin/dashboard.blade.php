@@ -112,19 +112,23 @@
                         stroke-dashoffset="25"
                         stroke-linecap="round"
                         transform="rotate(-90 21 21)"/>
-                <text x="21" y="24" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1E3A5F">
+                <text x="21" y="24" text-anchor="middle" font-size="7.5" font-weight="800" fill="var(--ink)">
                     {{ $partisipasiPersen }}%
                 </text>
             </svg>
 
             <div style="font-size: 11.5px; margin-top: 14px; text-align: left; display: flex; flex-direction: column; gap: 6px; padding: 0 10px;">
                 <div style="display: flex; justify-content: space-between;">
-                    <span><span style="color: #2F80ED; font-size: 14px;">●</span> Terisi:</span>
-                    <strong>{{ $totalEvaluasiAktif }} Evaluasi</strong>
+                    <span><span style="color: #2F80ED; font-size: 14px;">●</span> Mahasiswa Mengisi:</span>
+                    <strong>{{ $mahasiswaMengisi ?? $totalEvaluasiAktif }} Mahasiswa</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                     <span><span style="color: #E4EEFD; font-size: 14px;">●</span> Target Respon:</span>
-                    <strong>{{ max(1, $totalMahasiswa * 4) }} Evaluasi</strong>
+                    <strong>{{ $totalMahasiswa }} Mahasiswa</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 4px; margin-top: 2px;">
+                    <span>Total Evaluasi Masuk:</span>
+                    <strong>{{ $totalEvaluasiAktif }} Evaluasi</strong>
                 </div>
             </div>
 
