@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
         // ============================================================
         // Buat akun Admin utama terlebih dahulu
         // ============================================================
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'admin@lp3i.ac.id'],
             [
                 'name'     => 'Administrator LP3I',
@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('');
         $this->command->info('🎉 Semua data berhasil diimport ke database!');
-        $this->command->info('   Login admin: admin@lp3i.ac.id | password123');
+        $this->command->info('   Login admin: admin@lp3i.ac.id | admin123# (atau admin)');
         $this->command->info('   Login dosen: [nama]@lp3i.ac.id | password123');
         $this->command->info('   Login mahasiswa: [nipd]@lp3i.ac.id | password123');
     }

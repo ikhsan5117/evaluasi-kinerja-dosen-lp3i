@@ -189,11 +189,11 @@ class ExcelTemplateService
             ],
             'pertanyaan' => [
                 'title' => 'Butir Pertanyaan Kuesioner',
-                'subtitle' => 'Petunjuk: Kategori wajib salah satu dari: Pedagogik, Profesional, Kepribadian, atau Sosial. Skor skala Likert 1-5 akan diterapkan otomatis.',
-                'headers' => ['No', 'Teks Butir Pertanyaan', 'Kategori (Pedagogik / Profesional / Kepribadian / Sosial)'],
+                'subtitle' => 'Petunjuk: Kategori wajib salah satu dari: Metode Pembelajaran, Profesional, Kepribadian, atau Sosial. Skor skala Likert 1-5 akan diterapkan otomatis.',
+                'headers' => ['No', 'Teks Butir Pertanyaan', 'Kategori (Metode Pembelajaran / Profesional / Kepribadian / Sosial)'],
                 'center_columns' => [1, 3],
                 'samples' => [
-                    ['1', 'Dosen menyampaikan rencana pembelajaran (RPS) dan kontrak kuliah dengan jelas di awal perkuliahan.', 'Pedagogik'],
+                    ['1', 'Dosen menyampaikan rencana pembelajaran (RPS) dan kontrak kuliah dengan jelas di awal perkuliahan.', 'Metode Pembelajaran'],
                     ['2', 'Dosen menguasai materi perkuliahan secara mendalam dan mampu menjelaskan konsep dengan baik.', 'Profesional'],
                     ['3', 'Dosen bersikap adil, santun, dan objektif dalam memberikan penilaian kepada mahasiswa.', 'Kepribadian'],
                     ['4', 'Dosen mudah dihubungi dan terbuka untuk berdiskusi terkait kesulitan belajar mahasiswa.', 'Sosial'],

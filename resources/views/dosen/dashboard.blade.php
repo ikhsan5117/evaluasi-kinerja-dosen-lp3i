@@ -71,7 +71,7 @@
                     {{ number_format($pedagogik, 2) }}
                 </div>
                 <div style="width: 36px; height: {{ max(10, ($pedagogik / 5) * 110) }}px; background: #2F80ED; border-radius: 6px 6px 0 0; transition: height 0.5s;"></div>
-                <div style="font-size: 10.5px; color: var(--muted); margin-top: 8px; font-weight: 600;">Pedagogik</div>
+                <div style="font-size: 10.5px; color: var(--muted); margin-top: 8px; font-weight: 600;">Metode Belajar</div>
             </div>
 
             <!-- Profesional -->

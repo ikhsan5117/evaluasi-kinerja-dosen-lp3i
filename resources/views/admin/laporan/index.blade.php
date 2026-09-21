@@ -108,7 +108,7 @@
                         <th>Nama Dosen & NIDN</th>
                         <th>Mata Kuliah & Kelas</th>
                         <th>Responden</th>
-                        <th>Pedagogik</th>
+                        <th>Metode Pembelajaran</th>
                         <th>Profesional</th>
                         <th>Kepribadian</th>
                         <th>Sosial</th>

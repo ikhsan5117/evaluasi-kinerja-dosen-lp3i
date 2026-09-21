@@ -67,7 +67,7 @@
                             <td>
                                 @php
                                     $badgeClass = match($p->kategori) {
-                                        'Pedagogik' => 'badge-blue',
+                                        'Pedagogik', 'Metode Pembelajaran' => 'badge-blue',
                                         'Profesional' => 'badge-purple',
                                         'Kepribadian' => 'badge-green',
                                         'Sosial' => 'badge-amber',
@@ -109,10 +109,11 @@
                 <div class="form-group">
                     <label class="form-label">Aspek Kompetensi</label>
                     <select name="kategori" class="form-control" required>
-                        <option value="Pedagogik">Pedagogik (Metode & Penyampaian)</option>
+                        <option value="Metode Pembelajaran">Metode Pembelajaran (Penyampaian & Praktik)</option>
                         <option value="Profesional">Profesional (Penguasaan Materi & Objektivitas)</option>
                         <option value="Kepribadian">Kepribadian (Keteladanan & Kedisiplinan)</option>
                         <option value="Sosial">Sosial (Komunikasi & Interaksi Kelas)</option>
+                        <option value="Pedagogik">Pedagogik</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -146,10 +147,11 @@
                 <div class="form-group">
                     <label class="form-label">Aspek Kompetensi</label>
                     <select name="kategori" id="editKategori" class="form-control" required>
-                        <option value="Pedagogik">Pedagogik</option>
+                        <option value="Metode Pembelajaran">Metode Pembelajaran</option>
                         <option value="Profesional">Profesional</option>
                         <option value="Kepribadian">Kepribadian</option>
                         <option value="Sosial">Sosial</option>
+                        <option value="Pedagogik">Pedagogik</option>
                     </select>
                 </div>
                 <div class="form-group">

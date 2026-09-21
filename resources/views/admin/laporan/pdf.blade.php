@@ -108,7 +108,7 @@
                 <th>Program Studi</th>
                 <th>Mata Kuliah & Kelas</th>
                 <th class="text-center">Responden</th>
-                <th class="text-center">Pedagogik</th>
+                <th class="text-center">Metode Pembelajaran</th>
                 <th class="text-center">Profesional</th>
                 <th class="text-center">Kepribadian</th>
                 <th class="text-center">Sosial</th>

@@ -99,7 +99,7 @@ class KuesionerController extends Controller
     {
         $validated = $request->validate([
             'teks_pertanyaan' => 'required|string',
-            'kategori' => 'required|in:Pedagogik,Profesional,Kepribadian,Sosial',
+            'kategori' => 'required|in:Pedagogik,Metode Pembelajaran,Profesional,Kepribadian,Sosial',
             'nomor_urut' => 'required|integer|min:1',
         ]);
 
@@ -112,7 +112,7 @@ class KuesionerController extends Controller
     {
         $validated = $request->validate([
             'teks_pertanyaan' => 'required|string',
-            'kategori' => 'required|in:Pedagogik,Profesional,Kepribadian,Sosial',
+            'kategori' => 'required|in:Pedagogik,Metode Pembelajaran,Profesional,Kepribadian,Sosial',
             'nomor_urut' => 'required|integer|min:1',
         ]);
 
@@ -194,7 +194,8 @@ class KuesionerController extends Controller
                     'profesional', 'professional' => 'Profesional',
                     'kepribadian', 'personality' => 'Kepribadian',
                     'sosial', 'social' => 'Sosial',
-                    default => 'Pedagogik',
+                    'pedagogik' => 'Pedagogik',
+                    default => 'Metode Pembelajaran',
                 };
 
                 $nomorUrut = is_numeric($noUrutInput) && (int)$noUrutInput > 0

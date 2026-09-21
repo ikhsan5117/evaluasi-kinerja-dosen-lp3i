@@ -43,7 +43,7 @@
                         <th>Mata Kuliah</th>
                         <th>Kelas</th>
                         <th>Responden</th>
-                        <th>Pedagogik</th>
+                        <th>Metode Pembelajaran</th>
                         <th>Profesional</th>
                         <th>Kepribadian</th>
                         <th>Sosial</th>

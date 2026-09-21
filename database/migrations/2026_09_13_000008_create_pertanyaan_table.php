@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('kuesioner_id')->constrained('kuesioner')->onDelete('cascade');
             $table->text('teks_pertanyaan');
-            $table->enum('kategori', ['Pedagogik', 'Profesional', 'Kepribadian', 'Sosial'])->default('Pedagogik');
+            $table->string('kategori', 100)->default('Metode Pembelajaran');
             $table->integer('nomor_urut')->default(1);
             $table->timestamps();
         });

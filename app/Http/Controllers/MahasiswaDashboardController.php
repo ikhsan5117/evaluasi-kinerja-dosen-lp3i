@@ -48,6 +48,7 @@ class MahasiswaDashboardController extends Controller
         $totalKelas = $kelasList->count();
         $totalSudah = count($evaluasiSelesai);
         $totalBelum = max(0, $totalKelas - $totalSudah);
+        $namaKelasFilter = $rawKelas;
 
         return view('mahasiswa.dashboard', compact(
             'mahasiswa',

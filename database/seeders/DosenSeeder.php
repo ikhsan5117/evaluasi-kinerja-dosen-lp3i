@@ -54,6 +54,7 @@ class DosenSeeder extends Seeder
         ];
 
         $prodis = ProgramStudi::pluck('id', 'kode_prodi')->toArray();
+        $defaultPasswordHash = Hash::make('password123');
 
         foreach ($dosenList as $index => $data) {
             $namaSlug = Str::slug($data['nama'], '.');
@@ -70,7 +71,7 @@ class DosenSeeder extends Seeder
                 [
                     'name'     => $data['nama'],
                     'role'     => 'dosen',
-                    'password' => Hash::make('password123'),
+                    'password' => $defaultPasswordHash,
                 ]
             );
 

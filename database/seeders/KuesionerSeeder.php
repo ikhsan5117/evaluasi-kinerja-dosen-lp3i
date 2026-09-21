@@ -34,25 +34,25 @@ class KuesionerSeeder extends Seeder
         );
 
         $pertanyaanList = [
-            // PEDAGOGIK (1-4)
+            // METODE PEMBELAJARAN (1-4)
             [
                 'nomor_urut' => 1,
-                'kategori' => 'Pedagogik',
+                'kategori' => 'Metode Pembelajaran',
                 'teks_pertanyaan' => 'Dosen menyampaikan silabus, rencana pembelajaran (RPS), dan kontrak kuliah di awal semester dengan jelas.',
             ],
             [
                 'nomor_urut' => 2,
-                'kategori' => 'Pedagogik',
+                'kategori' => 'Metode Pembelajaran',
                 'teks_pertanyaan' => 'Dosen menguasai metode pembelajaran yang interaktif dan mudah dipahami mahasiswa.',
             ],
             [
                 'nomor_urut' => 3,
-                'kategori' => 'Pedagogik',
+                'kategori' => 'Metode Pembelajaran',
                 'teks_pertanyaan' => 'Dosen memanfaatkan media dan teknologi pembelajaran secara efektif selama perkuliahan.',
             ],
             [
                 'nomor_urut' => 4,
-                'kategori' => 'Pedagogik',
+                'kategori' => 'Metode Pembelajaran',
                 'teks_pertanyaan' => 'Dosen memberikan umpan balik dan evaluasi yang jelas terhadap tugas atau ujian mahasiswa.',
             ],
 

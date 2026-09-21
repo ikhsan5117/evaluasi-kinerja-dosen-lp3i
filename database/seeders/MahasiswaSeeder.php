@@ -26,6 +26,7 @@ class MahasiswaSeeder extends Seeder
         if (file_exists($jsonPath)) {
             $mahasiswaList = json_decode(file_get_contents($jsonPath), true) ?? [];
             $total = 0;
+            $defaultPasswordHash = Hash::make('password123');
 
             foreach ($mahasiswaList as $m) {
                 $user = User::firstOrCreate(
@@ -34,7 +35,7 @@ class MahasiswaSeeder extends Seeder
                         'name'     => $m['name'],
                         'role'     => 'mahasiswa',
                         'phone'    => $m['phone'] ?? null,
-                        'password' => Hash::make('password123'),
+                        'password' => $defaultPasswordHash,
                     ]
                 );
 

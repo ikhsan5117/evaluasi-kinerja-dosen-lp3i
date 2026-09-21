@@ -36,7 +36,7 @@ return new class extends Migration
                 kmk.periode_id,
                 kmk.nama_kelas,
                 COUNT(DISTINCT e.id) AS total_responden,
-                AVG(CASE WHEN p.kategori = 'Pedagogik' THEN jk.skor ELSE NULL END) AS avg_pedagogik,
+                AVG(CASE WHEN p.kategori IN ('Pedagogik', 'Metode Pembelajaran') THEN jk.skor ELSE NULL END) AS avg_pedagogik,
                 AVG(CASE WHEN p.kategori = 'Profesional' THEN jk.skor ELSE NULL END) AS avg_profesional,
                 AVG(CASE WHEN p.kategori = 'Kepribadian' THEN jk.skor ELSE NULL END) AS avg_kepribadian,
                 AVG(CASE WHEN p.kategori = 'Sosial' THEN jk.skor ELSE NULL END) AS avg_sosial,

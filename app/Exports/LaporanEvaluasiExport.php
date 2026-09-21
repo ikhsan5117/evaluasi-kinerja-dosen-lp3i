@@ -86,7 +86,7 @@ class LaporanEvaluasiExport implements FromCollection, WithHeadings, ShouldAutoS
             'Mata Kuliah',
             'Kelas',
             'Total Responden',
-            'Pedagogik (1-5)',
+            'Metode Pembelajaran (1-5)',
             'Profesional (1-5)',
             'Kepribadian (1-5)',
             'Sosial (1-5)',

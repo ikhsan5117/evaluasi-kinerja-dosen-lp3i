@@ -32,7 +32,7 @@ class DosenDashboardController extends Controller
         // Hitung nilai per aspek
         $allJawaban = JawabanKuesioner::whereIn('evaluasi_id', $evaluasiIds)->with('pertanyaan')->get();
 
-        $pedagogik = $allJawaban->where('pertanyaan.kategori', 'Pedagogik')->avg('skor') ?? 0;
+        $pedagogik = $allJawaban->filter(fn($j) => in_array($j->pertanyaan?->kategori, ['Pedagogik', 'Metode Pembelajaran']))->avg('skor') ?? 0;
         $profesional = $allJawaban->where('pertanyaan.kategori', 'Profesional')->avg('skor') ?? 0;
         $kepribadian = $allJawaban->where('pertanyaan.kategori', 'Kepribadian')->avg('skor') ?? 0;
         $sosial = $allJawaban->where('pertanyaan.kategori', 'Sosial')->avg('skor') ?? 0;
