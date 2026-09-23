@@ -55,14 +55,20 @@ class AuthController extends Controller
             ->get();
         $candidates = $candidates->merge($adminUsers);
 
-        // 2. Check Dosen matches (by name, email, or NIDN)
+        // 2. Check Dosen matches (by name, email, NIDN, or name with gelar)
+        $baseDosenName = trim(explode(',', $identifier)[0]);
+        $cleanId = strtolower($identifier);
+        $cleanBase = strtolower($baseDosenName);
         $dosenUsers = \App\Models\User::where('role', 'dosen')
-            ->where(function ($q) use ($identifier) {
+            ->where(function ($q) use ($identifier, $baseDosenName, $cleanId, $cleanBase) {
                 $q->where('email', $identifier)
                     ->orWhere('name', $identifier)
-                    ->orWhereRaw('LOWER(name) LIKE ?', ['%' . strtolower($identifier) . '%'])
-                    ->orWhereHas('dosen', function ($dq) use ($identifier) {
-                        $dq->where('nidn', $identifier);
+                    ->orWhere('name', $baseDosenName)
+                    ->orWhereRaw('LOWER(name) LIKE ?', ['%' . $cleanId . '%'])
+                    ->orWhereRaw('LOWER(name) LIKE ?', ['%' . $cleanBase . '%'])
+                    ->orWhereHas('dosen', function ($dq) use ($identifier, $cleanId) {
+                        $dq->where('nidn', $identifier)
+                            ->orWhereRaw('LOWER(gelar) LIKE ?', ['%' . $cleanId . '%']);
                     });
             })
             ->get();
@@ -213,27 +219,27 @@ class AuthController extends Controller
         $kelas = trim((string) $request->input('kelas', ''));
         $q = trim((string) $request->input('q', ''));
 
-        $query = \App\Models\Mahasiswa::with('user:id,name,email')
+        $query = \App\Models\Mahasiswa::join('users', 'users.id', '=', 'mahasiswa.user_id')
+            ->select('mahasiswa.nim', 'mahasiswa.kelas', 'users.name', 'users.email')
             ->where(function ($sub) {
-                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
+                $sub->whereNull('mahasiswa.status')->orWhereNotIn('mahasiswa.status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
             })
             ->when($kelas, function ($query, $kelas) {
-                $query->where('kelas', $kelas);
+                $query->where('mahasiswa.kelas', $kelas);
             })
             ->when($q, function ($query, $q) {
                 $query->where(function ($sub) use ($q) {
-                    $sub->where('nim', 'like', "%{$q}%")
-                        ->orWhereHas('user', function ($uq) use ($q) {
-                            $uq->where('name', 'like', "%{$q}%");
-                        });
+                    $sub->where('mahasiswa.nim', 'like', "%{$q}%")
+                        ->orWhere('users.name', 'like', "%{$q}%");
                 });
             })
+            ->orderBy('users.name')
             ->limit(30)
             ->get()
             ->map(function ($m) {
                 return [
                     'nim'   => $m->nim,
-                    'name'  => $m->user?->name ?? $m->nim,
+                    'name'  => $m->name ?? $m->nim,
                     'kelas' => $m->kelas,
                 ];
             });
@@ -244,28 +250,44 @@ class AuthController extends Controller
     public function autocompleteDosen(Request $request)
     {
         $q = trim((string) $request->input('q', ''));
+        $terms = array_filter(preg_split('/[\s,]+/', $q));
 
-        $query = \App\Models\Dosen::with('user:id,name,email')
+        $query = \App\Models\Dosen::join('users', 'users.id', '=', 'dosen.user_id')
+            ->select('dosen.nidn', 'dosen.gelar', 'users.name', 'users.email')
             ->where(function ($sub) {
-                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif']);
+                $sub->whereNull('dosen.status')->orWhereNotIn('dosen.status', ['Nonaktif', 'tidak aktif']);
             })
-            ->when($q, function ($query, $q) {
-                $query->where(function ($sub) use ($q) {
-                    $sub->where('nidn', 'like', "%{$q}%")
-                        ->orWhereHas('user', function ($uq) use ($q) {
-                            $uq->where('name', 'like', "%{$q}%");
+            ->when($q, function ($query) use ($q, $terms) {
+                $query->where(function ($sub) use ($q, $terms) {
+                    $sub->where('dosen.nidn', 'like', "%{$q}%")
+                        ->orWhere('users.name', 'like', "%{$q}%")
+                        ->orWhere('dosen.gelar', 'like', "%{$q}%");
+
+                    if (count($terms) > 1) {
+                        $sub->orWhere(function ($tq) use ($terms) {
+                            foreach ($terms as $term) {
+                                $tq->where(function ($w) use ($term) {
+                                    $w->where('users.name', 'like', "%{$term}%")
+                                      ->orWhere('dosen.gelar', 'like', "%{$term}%")
+                                      ->orWhere('dosen.nidn', 'like', "%{$term}%");
+                                });
+                            }
                         });
+                    }
                 });
             })
+            ->orderBy('users.name')
             ->limit(30)
             ->get()
             ->map(function ($d) {
-                $gelar = $d->gelar ? ', ' . $d->gelar : '';
+                $gelar = !empty($d->gelar) ? ', ' . trim($d->gelar) : '';
+                $namaLengkap = trim(($d->name ?? '') . $gelar);
                 return [
                     'nidn'     => $d->nidn,
-                    'name'     => ($d->user?->name ?? '') . $gelar,
-                    'raw_name' => $d->user?->name ?? '',
-                    'email'    => $d->user?->email ?? '',
+                    'name'     => $namaLengkap,
+                    'raw_name' => $namaLengkap,
+                    'email'    => $d->email ?? '',
+                    'gelar'    => $d->gelar,
                 ];
             });
 
@@ -277,29 +299,29 @@ class AuthController extends Controller
         $kelas = trim((string) $request->input('kelas', ''));
         $q = trim((string) $request->input('q', ''));
 
-        // If specific class is selected, show active students for that class
+        // If specific class is selected, show active students for that class instantly
         if (!empty($kelas)) {
-            $mhs = \App\Models\Mahasiswa::with('user:id,name,email')
-                ->where('kelas', $kelas)
+            $mhs = \App\Models\Mahasiswa::join('users', 'users.id', '=', 'mahasiswa.user_id')
+                ->select('mahasiswa.nim', 'mahasiswa.kelas', 'users.name', 'users.email')
+                ->where('mahasiswa.kelas', $kelas)
                 ->where(function ($sub) {
-                    $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
+                    $sub->whereNull('mahasiswa.status')->orWhereNotIn('mahasiswa.status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
                 })
                 ->when($q, function ($query, $q) {
                     $query->where(function ($sub) use ($q) {
-                        $sub->where('nim', 'like', "%{$q}%")
-                            ->orWhereHas('user', function ($uq) use ($q) {
-                                $uq->where('name', 'like', "%{$q}%");
-                            });
+                        $sub->where('mahasiswa.nim', 'like', "%{$q}%")
+                            ->orWhere('users.name', 'like', "%{$q}%");
                     });
                 })
+                ->orderBy('users.name')
                 ->limit(30)
                 ->get()
                 ->map(function ($m) {
                     return [
                         'type'     => 'mahasiswa',
                         'icon'     => '🎓',
-                        'name'     => $m->user?->name ?? $m->nim,
-                        'raw_name' => $m->user?->name ?? $m->nim,
+                        'name'     => $m->name ?? $m->nim,
+                        'raw_name' => $m->name ?? $m->nim,
                         'nim'      => $m->nim,
                         'kelas'    => $m->kelas,
                     ];
@@ -317,52 +339,68 @@ class AuthController extends Controller
             return response()->json([]);
         }
 
-        // Search Active Mahasiswa
-        $mhs = \App\Models\Mahasiswa::with('user:id,name,email')
+        // Search Active Mahasiswa with Direct SQL Join for maximum speed
+        $mhs = \App\Models\Mahasiswa::join('users', 'users.id', '=', 'mahasiswa.user_id')
+            ->select('mahasiswa.nim', 'mahasiswa.kelas', 'users.name', 'users.email')
             ->where(function ($sub) {
-                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
+                $sub->whereNull('mahasiswa.status')->orWhereNotIn('mahasiswa.status', ['Nonaktif', 'tidak aktif', 'keluar', 'do']);
             })
             ->where(function ($sub) use ($q) {
-                $sub->where('nim', 'like', "%{$q}%")
-                    ->orWhereHas('user', function ($uq) use ($q) {
-                        $uq->where('name', 'like', "%{$q}%");
-                    });
+                $sub->where('mahasiswa.nim', 'like', "%{$q}%")
+                    ->orWhere('users.name', 'like', "%{$q}%");
             })
+            ->orderBy('users.name')
             ->limit(15)
             ->get()
             ->map(function ($m) {
                 return [
                     'type'     => 'mahasiswa',
                     'icon'     => '🎓',
-                    'name'     => $m->user?->name ?? $m->nim,
-                    'raw_name' => $m->user?->name ?? $m->nim,
+                    'name'     => $m->name ?? $m->nim,
+                    'raw_name' => $m->name ?? $m->nim,
                     'nim'      => $m->nim,
                     'kelas'    => $m->kelas,
                 ];
             });
 
-        // Search Active Dosen
-        $dsn = \App\Models\Dosen::with('user:id,name,email')
+        // Search Active Dosen with Direct SQL Join and Gelar (database-agnostic)
+        $terms = array_filter(preg_split('/[\s,]+/', $q));
+        $dsn = \App\Models\Dosen::join('users', 'users.id', '=', 'dosen.user_id')
+            ->select('dosen.nidn', 'dosen.gelar', 'users.name', 'users.email')
             ->where(function ($sub) {
-                $sub->whereNull('status')->orWhereNotIn('status', ['Nonaktif', 'tidak aktif']);
+                $sub->whereNull('dosen.status')->orWhereNotIn('dosen.status', ['Nonaktif', 'tidak aktif']);
             })
-            ->where(function ($sub) use ($q) {
-                $sub->where('nidn', 'like', "%{$q}%")
-                    ->orWhereHas('user', function ($uq) use ($q) {
-                        $uq->where('name', 'like', "%{$q}%");
+            ->where(function ($sub) use ($q, $terms) {
+                $sub->where('dosen.nidn', 'like', "%{$q}%")
+                    ->orWhere('users.name', 'like', "%{$q}%")
+                    ->orWhere('dosen.gelar', 'like', "%{$q}%");
+
+                if (count($terms) > 1) {
+                    $sub->orWhere(function ($tq) use ($terms) {
+                        foreach ($terms as $term) {
+                            $tq->where(function ($w) use ($term) {
+                                $w->where('users.name', 'like', "%{$term}%")
+                                  ->orWhere('dosen.gelar', 'like', "%{$term}%")
+                                  ->orWhere('dosen.nidn', 'like', "%{$term}%");
+                            });
+                        }
                     });
+                }
             })
+            ->orderBy('users.name')
             ->limit(15)
             ->get()
             ->map(function ($d) {
-                $gelar = $d->gelar ? ', ' . $d->gelar : '';
+                $gelar = !empty($d->gelar) ? ', ' . trim($d->gelar) : '';
+                $namaLengkap = trim(($d->name ?? '') . $gelar);
                 return [
                     'type'     => 'dosen',
                     'icon'     => '🧑‍🏫',
-                    'name'     => ($d->user?->name ?? '') . $gelar,
-                    'raw_name' => $d->user?->name ?? '',
+                    'name'     => $namaLengkap,
+                    'raw_name' => $namaLengkap,
                     'nidn'     => $d->nidn,
-                    'email'    => $d->user?->email ?? '',
+                    'email'    => $d->email ?? '',
+                    'gelar'    => $d->gelar,
                     'kelas'    => null,
                 ];
             });

@@ -944,5 +944,6 @@
             localStorage.setItem('lp3i_theme', newTheme);
         }
     </script>
+    @stack('scripts')
 </body>
 </html>

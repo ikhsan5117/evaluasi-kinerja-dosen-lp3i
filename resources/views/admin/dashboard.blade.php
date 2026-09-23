@@ -61,20 +61,21 @@
                 Belum ada data evaluasi yang masuk pada periode ini.
             </div>
         @else
-            <div class="table-responsive">
-                <table>
-                    <thead>
+            {{-- Tabel dengan scroll horizontal + vertikal, dan pagination 6 baris --}}
+            <div id="evalTableWrapper" style="overflow-x: auto; overflow-y: auto; max-height: 310px; border-radius: 10px; border: 1px solid var(--border);">
+                <table id="evalTable" style="min-width: 560px; border-collapse: collapse; width: 100%;">
+                    <thead style="position: sticky; top: 0; z-index: 2; background: var(--card-bg);">
                         <tr>
-                            <th>Waktu</th>
-                            <th>Mahasiswa</th>
-                            <th>Dosen & Mata Kuliah</th>
-                            <th>Skor Rata-rata</th>
+                            <th style="white-space: nowrap;">Waktu</th>
+                            <th style="white-space: nowrap;">Mahasiswa</th>
+                            <th style="white-space: nowrap;">Dosen & Mata Kuliah</th>
+                            <th style="white-space: nowrap;">Skor Rata-rata</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="evalTbody">
                         @foreach($recentEvaluasi as $eval)
-                            <tr>
-                                <td style="color: var(--muted); font-size: 11px;">
+                            <tr class="eval-row" style="display: none;">
+                                <td style="color: var(--muted); font-size: 11px; white-space: nowrap;">
                                     {{ $eval->created_at->diffForHumans() }}
                                 </td>
                                 <td>
@@ -85,7 +86,7 @@
                                     <strong>{{ $eval->kelasMataKuliah->dosen->nama_lengkap ?? '-' }}</strong><br>
                                     <span style="font-size: 10.5px; color: var(--muted);">{{ $eval->kelasMataKuliah->mataKuliah->nama_matkul ?? '-' }}</span>
                                 </td>
-                                <td>
+                                <td style="white-space: nowrap;">
                                     <span class="badge badge-green" style="font-size: 11px;">
                                         ★ {{ $eval->rata_rata }} / 5.0
                                     </span>
@@ -94,6 +95,30 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            {{-- Pagination Controls --}}
+            <div id="evalPagination" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 2px; flex-wrap: wrap; gap: 6px;">
+                <div style="font-size: 11px; color: var(--muted);" id="evalPageInfo"></div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button id="evalPrevBtn" onclick="evalChangePage(-1)"
+                        style="padding: 4px 12px; border-radius: 7px; border: 1px solid var(--border);
+                               background: var(--card-bg); color: var(--ink); cursor: pointer;
+                               font-size: 12px; font-weight: 600; transition: all 0.15s;"
+                        onmouseover="this.style.borderColor='#2F80ED'" onmouseout="this.style.borderColor='var(--border)'">
+                        ← Prev
+                    </button>
+
+                    <div id="evalPageDots" style="display: flex; gap: 4px;"></div>
+
+                    <button id="evalNextBtn" onclick="evalChangePage(1)"
+                        style="padding: 4px 12px; border-radius: 7px; border: 1px solid var(--border);
+                               background: var(--card-bg); color: var(--ink); cursor: pointer;
+                               font-size: 12px; font-weight: 600; transition: all 0.15s;"
+                        onmouseover="this.style.borderColor='#2F80ED'" onmouseout="this.style.borderColor='var(--border)'">
+                        Next →
+                    </button>
+                </div>
             </div>
         @endif
     </div>
@@ -140,3 +165,104 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const ROWS_PER_PAGE = 6;
+    let currentPage = 1;
+
+    const rows = Array.from(document.querySelectorAll('#evalTbody .eval-row'));
+    const totalRows = rows.length;
+    const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE);
+
+    const pageInfo  = document.getElementById('evalPageInfo');
+    const prevBtn   = document.getElementById('evalPrevBtn');
+    const nextBtn   = document.getElementById('evalNextBtn');
+    const dotsWrap  = document.getElementById('evalPageDots');
+    const pagination = document.getElementById('evalPagination');
+
+    // Sembunyikan pagination jika data <= 6 baris
+    if (totalPages <= 1) {
+        rows.forEach(r => r.style.display = '');
+        if (pagination) pagination.style.display = 'none';
+        return;
+    }
+
+    function renderPage(page) {
+        currentPage = Math.max(1, Math.min(page, totalPages));
+        const start = (currentPage - 1) * ROWS_PER_PAGE;
+        const end   = start + ROWS_PER_PAGE;
+
+        rows.forEach((row, idx) => {
+            row.style.display = (idx >= start && idx < end) ? '' : 'none';
+        });
+
+        // Info teks: "Menampilkan 1–6 dari 50 data"
+        const from = start + 1;
+        const to   = Math.min(end, totalRows);
+        if (pageInfo) pageInfo.textContent = `Menampilkan ${from}–${to} dari ${totalRows} data`;
+
+        // Tombol disable
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+
+        // Dots navigasi halaman
+        if (dotsWrap) {
+            dotsWrap.innerHTML = '';
+            // Tampilkan max 5 nomor halaman di sekitar halaman aktif
+            let startDot = Math.max(1, currentPage - 2);
+            let endDot   = Math.min(totalPages, startDot + 4);
+            startDot = Math.max(1, endDot - 4);
+
+            if (startDot > 1) {
+                dotsWrap.appendChild(makeDot(1));
+                if (startDot > 2) dotsWrap.appendChild(makeEllipsis());
+            }
+            for (let p = startDot; p <= endDot; p++) dotsWrap.appendChild(makeDot(p));
+            if (endDot < totalPages) {
+                if (endDot < totalPages - 1) dotsWrap.appendChild(makeEllipsis());
+                dotsWrap.appendChild(makeDot(totalPages));
+            }
+        }
+
+        // Scroll tabel ke atas saat ganti halaman
+        const wrapper = document.getElementById('evalTableWrapper');
+        if (wrapper) wrapper.scrollTop = 0;
+    }
+
+    function makeDot(p) {
+        const btn = document.createElement('button');
+        btn.textContent = p;
+        const isActive = p === currentPage;
+        btn.style.cssText = `
+            width: 26px; height: 26px; border-radius: 6px;
+            border: 1px solid ${isActive ? '#2F80ED' : 'var(--border)'};
+            background: ${isActive ? '#2F80ED' : 'var(--card-bg)'};
+            color: ${isActive ? '#fff' : 'var(--ink)'};
+            font-size: 11px; font-weight: 600;
+            cursor: ${isActive ? 'default' : 'pointer'};
+            transition: all 0.15s;
+        `;
+        if (!isActive) {
+            btn.addEventListener('click', () => renderPage(p));
+            btn.onmouseover = () => { btn.style.borderColor = '#2F80ED'; };
+            btn.onmouseout  = () => { btn.style.borderColor = 'var(--border)'; };
+        }
+        return btn;
+    }
+
+    function makeEllipsis() {
+        const span = document.createElement('span');
+        span.textContent = '...';
+        span.style.cssText = 'font-size: 11px; color: var(--muted); align-self: center; padding: 0 2px;';
+        return span;
+    }
+
+    window.evalChangePage = function (delta) { renderPage(currentPage + delta); };
+
+    // Render halaman pertama
+    renderPage(1);
+})();
+</script>
+@endpush

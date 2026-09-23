@@ -36,7 +36,7 @@ class AdminDashboardController extends Controller
         // Aktivitas terbaru
         $recentEvaluasi = Evaluasi::with(['mahasiswa.user', 'kelasMataKuliah.dosen.user', 'kelasMataKuliah.mataKuliah'])
             ->latest()
-            ->take(5)
+            ->take(50)
             ->get();
 
         return view('admin.dashboard', compact(

@@ -399,10 +399,31 @@
 </style>
 
 <script>
+    // ==========================================
+    // INITIAL LOCAL DATA & IN-MEMORY CACHE
+    // ==========================================
+    const _INITIAL_KELAS = @json($kelasList ?? []);
+    const _cache = {};
+
+    function cacheKey(endpoint, params) {
+        return endpoint + '?' + new URLSearchParams(params).toString();
+    }
+
+    async function cachedFetch(endpoint, params) {
+        const key = cacheKey(endpoint, params);
+        if (_cache[key] !== undefined) return _cache[key];
+        const res = await fetch(endpoint + '?' + new URLSearchParams(params).toString());
+        const data = await res.json();
+        _cache[key] = data;
+        // Simpan cache 5 menit agar interaksi super instan
+        setTimeout(() => delete _cache[key], 300000);
+        return data;
+    }
+
     let activeKelasIndex = -1;
     let activeNamaIndex = -1;
+    let currentKelasList = _INITIAL_KELAS || [];
     let currentMahasiswaList = [];
-    let currentKelasList = [];
     let kelasDebounceTimer = null;
     let namaDebounceTimer = null;
 
@@ -435,30 +456,51 @@
         inputKelas.value = '';
         document.getElementById('clearKelasBtn').style.display = 'none';
         closeDropdownNama();
-        fetchKelasData('');
+        filterKelasLocal('');
     }
 
     function clearNama() {
         const inputNama = document.getElementById('inputNama');
         inputNama.value = '';
         document.getElementById('clearNamaBtn').style.display = 'none';
+        const iconNama = document.getElementById('iconNama');
+        if (iconNama) iconNama.textContent = '👤';
         closeDropdownKelas();
         inputNama.focus();
     }
 
     // ==========================================
-    // AUTOCOMPLETE KELAS
+    // AUTOCOMPLETE KELAS (INSTANT 0ms LOCAL FILTER & PRODI INFO)
     // ==========================================
-    async function fetchKelasData(q = '') {
-        try {
-            closeDropdownNama();
-            const res = await fetch(`{{ route('auth.autocomplete.kelas') }}?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-            currentKelasList = data;
-            renderKelasDropdown(data, q);
-        } catch (e) {
-            console.error('Error fetching kelas:', e);
+    const PRODI_MAP = {
+        'ASE': 'Application Software Engineering',
+        'OAA': 'Office Administration Automatization',
+        'AIS': 'Accounting Information System'
+    };
+
+    function getProdiInfo(kelasStr) {
+        if (!kelasStr) return { code: '', name: '' };
+        const upper = kelasStr.toUpperCase();
+        if (upper.includes('ASE')) return { code: 'ASE', name: 'Application Software Engineering' };
+        if (upper.includes('OAA')) return { code: 'OAA', name: 'Office Administration Automatization' };
+        if (upper.includes('AIS')) return { code: 'AIS', name: 'Accounting Information System' };
+        return { code: '', name: '' };
+    }
+
+    function filterKelasLocal(q = '') {
+        closeDropdownNama();
+        const trimmed = (q || '').trim().toLowerCase();
+        let filtered = _INITIAL_KELAS;
+        if (trimmed) {
+            filtered = _INITIAL_KELAS.filter(k => {
+                const info = getProdiInfo(k);
+                return k.toLowerCase().includes(trimmed) ||
+                       info.name.toLowerCase().includes(trimmed) ||
+                       info.code.toLowerCase().includes(trimmed);
+            });
         }
+        currentKelasList = filtered;
+        renderKelasDropdown(filtered, q);
     }
 
     function renderKelasDropdown(items, query = '') {
@@ -482,13 +524,18 @@
                 highlighted = highlighted.replace(regex, '<mark>$1</mark>');
             }
 
+            const info = getProdiInfo(kelas);
+
             html += `
                 <div class="autocomplete-item" onclick="selectKelas('${escapeHtml(kelas)}')" data-index="${idx}">
                     <div class="item-main">
                         <span class="item-icon">🏫</span>
-                        <span class="item-title">${highlighted}</span>
+                        <div>
+                            <div class="item-title">${highlighted}</div>
+                            ${info.name ? `<div style="font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 400;">${escapeHtml(info.name)}</div>` : ''}
+                        </div>
                     </div>
-                    <span class="item-badge item-kelas-badge">Kelas</span>
+                    <span class="item-badge item-kelas-badge">${escapeHtml(info.code || 'Kelas')}</span>
                 </div>
             `;
         });
@@ -507,7 +554,7 @@
             if (triggerBtn) triggerBtn.classList.remove('active');
         } else {
             closeDropdownNama();
-            fetchKelasData(document.getElementById('inputKelas').value);
+            filterKelasLocal(document.getElementById('inputKelas').value);
         }
     }
 
@@ -524,13 +571,12 @@
     }
 
     // ==========================================
-    // AUTOCOMPLETE USERS (MAHASISWA & DOSEN)
+    // AUTOCOMPLETE USERS (MAHASISWA & DOSEN DENGAN GELAR)
     // ==========================================
     async function fetchUserData(q = '', kelas = '') {
         try {
             closeDropdownKelas();
-            const res = await fetch(`{{ route('auth.autocomplete.user') }}?kelas=${encodeURIComponent(kelas)}&q=${encodeURIComponent(q)}`);
-            const data = await res.json();
+            const data = await cachedFetch(`{{ route('auth.autocomplete.user') }}`, { kelas, q });
             currentMahasiswaList = data;
             renderUserDropdown(data, q, kelas);
         } catch (e) {
@@ -546,7 +592,7 @@
             if (query.trim().length > 0 || selectedKelas) {
                 const msg = selectedKelas 
                     ? `Tidak ada mahasiswa di kelas ${escapeHtml(selectedKelas)} yang cocok` 
-                    : 'Tidak ada data yang cocok';
+                    : 'Tidak ada akun atau data yang cocok';
                 dropdown.innerHTML = `<div class="autocomplete-empty">${msg}</div>`;
                 dropdown.classList.add('show');
             } else {
@@ -573,8 +619,9 @@
             const roleBadgeClass = isMhs ? 'badge-mahasiswa' : 'badge-dosen';
             const roleLabel = isMhs ? 'Mahasiswa' : 'Dosen';
 
+            // Nama lengkap dosen sudah bergelar (item.name)
             html += `
-                <div class="autocomplete-item" onclick="selectUser('${escapeHtml(item.raw_name || item.name)}', '${escapeHtml(item.kelas || '')}', '${item.type}')" data-index="${idx}">
+                <div class="autocomplete-item" onclick="selectUser('${escapeHtml(item.name)}', '${escapeHtml(item.kelas || '')}', '${item.type}', '${icon}')" data-index="${idx}">
                     <div class="item-main">
                         <span class="item-icon">${icon}</span>
                         <div>
@@ -594,9 +641,15 @@
         dropdown.classList.add('show');
     }
 
-    function selectUser(rawName, kelas, type) {
-        document.getElementById('inputNama').value = rawName;
+    function selectUser(fullNameWithGelar, kelas, type, icon) {
+        document.getElementById('inputNama').value = fullNameWithGelar;
         document.getElementById('clearNamaBtn').style.display = 'flex';
+        
+        const iconNama = document.getElementById('iconNama');
+        if (iconNama && icon) {
+            iconNama.textContent = icon;
+        }
+
         closeDropdownNama();
 
         const inputKelas = document.getElementById('inputKelas');
@@ -619,7 +672,7 @@
     }
 
     // ==========================================
-    // EVENT LISTENERS
+    // EVENT LISTENERS & KEYBOARD NAV
     // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
         const inputKelas = document.getElementById('inputKelas');
@@ -635,25 +688,22 @@
             clearNamaBtn.style.display = 'flex';
         }
 
-        // Kelas input events
+        // Kelas input events (Instant local filtering)
         if (inputKelas) {
             inputKelas.addEventListener('input', () => {
                 const val = inputKelas.value;
                 clearKelasBtn.style.display = val ? 'flex' : 'none';
                 closeDropdownNama();
-                clearTimeout(kelasDebounceTimer);
-                kelasDebounceTimer = setTimeout(() => {
-                    fetchKelasData(val);
-                }, 150);
+                filterKelasLocal(val);
             });
 
             inputKelas.addEventListener('focus', () => {
                 closeDropdownNama();
-                fetchKelasData(inputKelas.value);
+                filterKelasLocal(inputKelas.value);
             });
         }
 
-        // Nama input events
+        // Nama input events (Super fast 30ms debounce)
         if (inputNama) {
             inputNama.addEventListener('input', () => {
                 const val = inputNama.value;
@@ -664,7 +714,7 @@
                 namaDebounceTimer = setTimeout(() => {
                     const selectedKelas = inputKelas ? inputKelas.value : '';
                     fetchUserData(val, selectedKelas);
-                }, 150);
+                }, 30);
             });
 
             inputNama.addEventListener('focus', () => {
@@ -757,3 +807,5 @@
     });
 </script>
 @endsection
+
+

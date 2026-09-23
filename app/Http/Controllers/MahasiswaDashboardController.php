@@ -34,14 +34,14 @@ class MahasiswaDashboardController extends Controller
         $possibleClasses = array_values(array_unique(array_filter([$rawKelas, $kelasWithHyphen, $kelasWithSpace])));
 
         // Filter: hanya tampilkan mata kuliah & dosen untuk kelas milik mahasiswa ini
-        $kelasList = KelasMataKuliah::where('periode_id', $periodeAktif->id ?? 0)
+        $kelasList = KelasMataKuliah::where('periode_id', $periodeAktif?->id ?? 0)
             ->whereIn('nama_kelas', $possibleClasses)
             ->with(['mataKuliah', 'dosen.user'])
             ->get();
 
         // Kelas yang sudah dievaluasi oleh mahasiswa ini
         $evaluasiSelesai = Evaluasi::where('mahasiswa_id', $mahasiswa->id)
-            ->where('kuesioner_id', $kuesionerAktif->id ?? 0)
+            ->where('kuesioner_id', $kuesionerAktif?->id ?? 0)
             ->pluck('kelas_mata_kuliah_id')
             ->toArray();
 

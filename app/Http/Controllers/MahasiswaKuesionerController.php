@@ -19,7 +19,7 @@ class MahasiswaKuesionerController extends Controller
     {
         $user = Auth::user();
         $mahasiswa = Mahasiswa::where('user_id', $user->id)->firstOrFail();
-        $periodeAktif = Periode::where('status', 'Aktif')->first();
+        $periodeAktif = Periode::where('status', 'Aktif')->first() ?? Periode::latest()->first();
 
         $kuesionerAktif = Kuesioner::where('status', 'Aktif')
             ->when($periodeAktif, function ($q) use ($periodeAktif) {
@@ -38,7 +38,7 @@ class MahasiswaKuesionerController extends Controller
         $possibleClasses = array_values(array_unique(array_filter([$rawKelas, $kelasWithHyphen, $kelasWithSpace])));
 
         // Hanya mata kuliah & dosen pada kelas milik mahasiswa ini
-        $kelasList = KelasMataKuliah::where('periode_id', $periodeAktif->id ?? 0)
+        $kelasList = KelasMataKuliah::where('periode_id', $periodeAktif?->id ?? 0)
             ->whereIn('nama_kelas', $possibleClasses)
             ->with(['mataKuliah', 'dosen.user'])
             ->get();
